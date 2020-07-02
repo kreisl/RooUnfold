@@ -17,7 +17,7 @@
 #   ROOT_COMPONENT_LIBRARIES    : list of ROOT component libraries
 #   ROOT_${COMPONENT}_FOUND     : set to TRUE or FALSE for each library
 #   ROOT_${COMPONENT}_LIBRARY   : path to individual libraries
-#   
+#
 #
 #   Please note that by convention components should be entered exactly as
 #   the library names, i.e. the component name equivalent to the library
@@ -88,7 +88,7 @@ IF( ROOT_CONFIG_EXECUTABLE )
     # ==============================================
 
     INCLUDE( MacroCheckPackageVersion )
-    
+
     EXECUTE_PROCESS( COMMAND "${ROOT_CONFIG_EXECUTABLE}" --version
         OUTPUT_VARIABLE _version
         RESULT_VARIABLE _exit_code
@@ -105,7 +105,7 @@ IF( ROOT_CONFIG_EXECUTABLE )
     ENDIF()
 
     CHECK_PACKAGE_VERSION( ROOT ${ROOT_VERSION} )
-	
+
 	# find rootcint
 	SET( ROOT_CINT_EXECUTABLE ROOT_CINT_EXECUTABLE-NOTFOUND )
 	MARK_AS_ADVANCED( ROOT_CINT_EXECUTABLE )
@@ -179,7 +179,7 @@ IF( ROOT_CONFIG_EXECUTABLE )
         OUTPUT_STRIP_TRAILING_WHITESPACE
     )
     IF( _exit_code EQUAL 0 )
-        
+
         # create a list out of the output
         SEPARATE_ARGUMENTS( _aux )
 
@@ -200,6 +200,10 @@ IF( ROOT_CONFIG_EXECUTABLE )
             ENDIF()
 
         ENDFOREACH()
+
+        IF(NOT ROOT_VERSION_MAJOR LESS 6)
+	          LIST( APPEND _root_libnames Unfold )
+        ENDIF()
 
     ENDIF()
 
@@ -234,6 +238,44 @@ IF( ROOT_CONFIG_EXECUTABLE )
         MESSAGE( STATUS "Check for libdl.so: ${DL_LIB}" )
     ENDIF()
 
+    # Check for root-config scripts
+    #find_program(ROOT_CONFIG NAMES root-config PATHS ${ROOTSYS}/bin NO_DEFAULT_PATH)
+    #if(NOT ROOT_CONFIG)
+    #    message(FATAL_ERROR "Could not find root-config script.")
+    #endif(NOT ROOT_CONFIG)
+    #mark_as_advanced(ROOT_CONFIG)
+
+    # Setting ROOT compiler flags (except the -I parts) to a variable
+    execute_process(COMMAND ${ROOT_CONFIG_EXECUTABLE} --auxcflags OUTPUT_VARIABLE _ROOT_CXX_FLAGS ERROR_VARIABLE error OUTPUT_STRIP_TRAILING_WHITESPACE)
+    if(error)
+        message(FATAL_ERROR "Error retrieving ROOT compiler flags: ${error}")
+    endif(error)
+    string(STRIP "${_ROOT_CXX_FLAGS}" ROOT_CXX_FLAGS)
+
+    # Check if ROOT was built with C++11 support
+    if(ROOT_CXX_FLAGS MATCHES "-std=c\\+\\+11")
+        message(STATUS "ROOT was built with C++11 support")
+        set(ROOT_HAS_CXX11 TRUE)
+    else()
+        set(ROOT_HAS_CXX11 FALSE)
+    endif()
+
+    # Check if ROOT was built with C++14 support
+    if(ROOT_CXX_FLAGS MATCHES "-std=c\\+\\+14" OR ROOT_CXX_FLAGS MATCHES "-std=c\\+\\+1y")
+        message(STATUS "ROOT was built with C++14 support")
+        set(ROOT_HAS_CXX14 TRUE)
+    else()
+        set(ROOT_HAS_CXX14 FALSE)
+    endif()
+
+    # Check if ROOT was built with C++14 support
+    if(ROOT_CXX_FLAGS MATCHES "-std=c\\+\\+17" OR ROOT_CXX_FLAGS MATCHES "-std=c\\+\\+1z")
+        message(STATUS "ROOT was built with C++17 support")
+        set(ROOT_HAS_CXX14 TRUE)
+    else()
+        set(ROOT_HAS_CXX14 FALSE)
+    endif()
+
 ENDIF( ROOT_CONFIG_EXECUTABLE )
 
 # Threads library
@@ -261,4 +303,3 @@ ENDIF( ROOT_FOUND )
 # FIND_PACKAGE( ROOT REQUIRED )
 # FIND_PACKAGE( ROOT COMPONENTS geartgeo QUIET )
 SET( ROOT_FIND_REQUIRED )
-

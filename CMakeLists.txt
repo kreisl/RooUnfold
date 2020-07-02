@@ -38,8 +38,8 @@ set(ROOT_DICT_OUTPUT_DIR ${PROJECT_SOURCE_DIR})
 # and add LinkDef file to the end
 LIST( APPEND ROOT_DICT_INPUT_HEADERS ${LINK_DEF_FILE} )
 
-# generate dictionary sources using rootcint 
-GEN_ROOT_DICT_SOURCE( ${CINTFILE} ) 
+# generate dictionary sources using rootcint
+GEN_ROOT_DICT_SOURCE( ${CINTFILE} )
 
 # get boost
 set(Boost_USE_MULTITHREADED ON)
@@ -54,7 +54,21 @@ link_directories(${Boost_LIBRARY_DIRS})
 
 #Check the compiler and set the compile and link flags
 set(CMAKE_BUILD_TYPE Release)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -std=c++11")
+
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3")
+# properly set the C++ standard according to the standard used for the root build
+# Enable C++11 by default if found in ROOT
+message(STATUS "Determining C++ standard ...")
+if(ROOT_HAS_CXX11 AND NOT DISABLE_CXX11)
+  message(STATUS "Enabling C++11")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+endif()
+
+# Enable C++14 by default if found in ROOT
+if(ROOT_HAS_CXX14 AND NOT DISABLE_CXX14)
+  message(STATUS "Enabling C++14")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14")
+endif()
 # first attempt to make cmake work again on OS X
 if((CMAKE_CXX_COMPILER_ID STREQUAL "Clang") AND (APPLE))
 	MESSAGE(STATUS "** std library for clang: libc++")
@@ -69,7 +83,7 @@ target_link_libraries(${PROJECT_LIB_NAME}
 	 ${Boost_LIBRARIES}
 	 ${ROOT_LIBRARIES}
 	 )
-	 
+
 # tests
 enable_testing()
 set(PROJECT_TEST_NAME ${PROJECT_NAME_STR}_test)
@@ -83,3 +97,8 @@ target_link_libraries(${PROJECT_TEST_NAME}
 	 )
 
 add_test(test1 ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${PROJECT_TEST_NAME})
+
+# install
+install(TARGETS ${PROJECT_LIB_NAME} ${PROJECT_TEST_NAME}
+        LIBRARY DESTINATION lib
+        RUNTIME DESTINATION bin)
